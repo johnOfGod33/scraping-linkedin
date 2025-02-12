@@ -1,4 +1,5 @@
 from selenium import webdriver
+
 from utils import get_job_details, save_to_csv, search_jobs
 
 

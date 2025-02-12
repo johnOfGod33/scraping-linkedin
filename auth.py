@@ -58,6 +58,7 @@ def authenticate(driver: webdriver.Chrome, user_credentials: dict):
     Authentifie l'utilisateur sur LinkedIn en utilisant les cookies si disponibles,
     sinon procède à une connexion manuelle.
     """
+
     # Accéder à la page d'accueil de LinkedIn
     driver.get("https://linkedin.com")
 

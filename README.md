@@ -1,16 +1,20 @@
 ## Selenium Project
 
+Example of a selenium project. dynamique scraping of jobs data on linkedin after login
+
 ## Features
 
-- Login to LinkedIn
-- connection with cookies
-- save cookies  
+- authentication (login + cookie management)
+- dynamic scraping of jobs data 
+- saving jobs data in a csv file
 
 ### Installation
 
 ```bash
 python3 -m venv .venv
+
 source .venv/bin/activate
+
 pip install -r requirements.txt
 ```
 

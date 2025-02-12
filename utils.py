@@ -1,6 +1,7 @@
 import csv
 import json
 import re
+import time
 from datetime import datetime, timedelta
 
 from bs4 import BeautifulSoup
@@ -101,6 +102,7 @@ def get_job_details(driver, job_url):
         job_url,
     ]
 
+    time.sleep(10)
     return job_data
 
 
@@ -134,3 +136,20 @@ def search_jobs(driver: webdriver.Chrome, keyword: str):
             job_links.append(f'{base_url}{link["href"]}')
 
     return job_links
+
+
+""" def scroll_to_bottom(driver):
+    # Scroll to the bottom of the page
+    old_position = driver.execute_script("return window.pageYOffset;")
+    while True:
+        # Execute JavaScript to scroll down
+        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+        # Wait for the page to load
+        time.sleep(
+            3
+        )  # This delay will depend on the connection speed and server response time
+        new_position = driver.execute_script("return window.pageYOffset;")
+        if new_position == old_position:
+            break  # Exit the loop if the page hasn't scrolled, meaning end of page
+        old_position
+ """
