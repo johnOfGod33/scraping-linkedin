@@ -9,3 +9,4 @@ htmlcov
 git rm --cached -r __pycache__
 .env
 cookies.json
+jobs*.csv
