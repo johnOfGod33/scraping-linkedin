@@ -1,11 +1,20 @@
 import csv
 import json
+import os
 import re
 import time
 from datetime import datetime, timedelta
 
 from bs4 import BeautifulSoup
+from dotenv import load_dotenv
 from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.common.proxy import Proxy, ProxyType
+from webdriver_manager.chrome import ChromeDriverManager
+from webdriver_manager.core.os_manager import ChromeType
+
+load_dotenv()
 
 
 def load_cookies(driver: webdriver.Chrome):
@@ -18,6 +27,7 @@ def load_cookies(driver: webdriver.Chrome):
 
         return driver
     except FileNotFoundError:
+        print("No cookies found")
         return driver
 
 
@@ -153,3 +163,34 @@ def search_jobs(driver: webdriver.Chrome, keyword: str):
             break  # Exit the loop if the page hasn't scrolled, meaning end of page
         old_position
  """
+
+
+def driver_setup() -> webdriver.Chrome:
+    options = get_default_chrome_option()
+    # options.timeouts = {"implicit": 5000, "pageLoad": 10000}
+
+    # Use ChromeDriverManager to automatically download the latest compatible version
+    service = Service(ChromeDriverManager().install())
+    # options.proxy = Proxy({"proxyType": ProxyType.DIRECT})
+
+    driver = webdriver.Chrome(options=options, service=service)
+    print("driver setup")
+    return driver
+
+
+def get_default_chrome_option() -> Options:
+    options = webdriver.ChromeOptions()
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--disable-gpu")
+    options.add_argument("--disable-extensions")
+    options.add_argument("--disable-plugins")
+    options.add_argument("--disable-images")
+    options.add_argument("--disable-javascript")
+    options.add_argument("--disable-web-security")
+    options.add_argument("--allow-running-insecure-content")
+    options.add_argument("--disable-blink-features=AutomationControlled")
+    options.add_experimental_option("excludeSwitches", ["enable-automation"])
+    options.add_experimental_option("useAutomationExtension", False)
+
+    return options

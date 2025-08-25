@@ -11,7 +11,7 @@ def login(driver: webdriver.Chrome, user_credentials: dict):
     """
     Se connecte à LinkedIn en utilisant les informations d'identification de l'utilisateur.
     """
-
+    print("start login function")
     # Recherche tous les liens présents sur la page
     links = driver.find_elements(By.TAG_NAME, "a")
 

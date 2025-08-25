@@ -2,3 +2,7 @@ selenium
 bs4
 python-dotenv
 requests
+webdriver-manager
+openai
+pydantic-ai
+pydantic

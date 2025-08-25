@@ -1,3 +1,5 @@
+import time
+
 from selenium import webdriver
 
 from utils import get_job_details, save_to_csv, search_jobs
@@ -8,6 +10,7 @@ def scrape_jobs(driver: webdriver.Chrome, keyword: str):
     job_links = search_jobs(driver, keyword)
 
     for job_url in job_links:
+        time.sleep(10)
         job_data = get_job_details(driver, job_url)
         save_to_csv(job_data, f"jobs_{keyword}.csv")
         print("Title:", job_data[0])
