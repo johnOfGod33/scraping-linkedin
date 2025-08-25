@@ -1,3 +1,4 @@
+import asyncio
 import time
 
 from selenium import webdriver
@@ -11,7 +12,9 @@ def scrape_jobs(driver: webdriver.Chrome, keyword: str):
 
     for job_url in job_links:
         time.sleep(10)
-        job_data = get_job_details(driver, job_url)
+        job_data = asyncio.run(get_job_details(driver, job_url))
+        print("JOB OFFER : ", job_data)
+        break
         save_to_csv(job_data, f"jobs_{keyword}.csv")
         print("Title:", job_data[0])
         print("Company:", job_data[1])

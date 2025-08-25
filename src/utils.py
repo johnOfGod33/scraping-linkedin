@@ -14,6 +14,9 @@ from selenium.webdriver.common.proxy import Proxy, ProxyType
 from webdriver_manager.chrome import ChromeDriverManager
 from webdriver_manager.core.os_manager import ChromeType
 
+from ai.ai_service import AIService
+from models.job_offers import JobOffers
+
 load_dotenv()
 
 
@@ -63,57 +66,17 @@ def save_to_csv(data: list, filename: str):
         writer.writerow(data)
 
 
-def get_job_details(driver, job_url):
+async def get_job_details(driver, job_url) -> JobOffers:
     """Récupère les détails d'une offre d'emploi à partir de son URL."""
 
     driver.get(job_url)
     page_html = driver.page_source
-    soup_page = BeautifulSoup(page_html, "html.parser")
-
-    # Extraire le titre du job
-    title = soup_page.find("h1", class_="t-24 t-bold inline").text.strip()
-
-    # Extraire le nom de l'entreprise
-    company_name = soup_page.find(
-        "div", class_="job-details-jobs-unified-top-card__company-name"
-    ).text.strip()
-
-    # Extraire les détails supplémentaires sur l'offre
-    job_details = soup_page.find("div", class_="t-black--light mt2").text.strip()
-    details = job_details.split(" · ")  # Séparer les détails par " · "
-
-    # Vérifier si la date est relative (ex: "3 days ago") ou un autre format (ex: "Reposted")
-    relative_date = details[1]
-    match = re.search(r"(\d+)", relative_date)  # Recherche d'un nombre dans la chaîne
-
-    if match:
-        days_ago = int(match.group(1))  # Extraire le nombre de jours
-        posted_date = datetime.now() - timedelta(
-            days=days_ago
-        )  # Calculer la date exacte
-    else:
-        posted_date = datetime.now()  # Si "Reposted", utiliser la date actuelle
-
-    # Extraire le nombre de candidats ayant postulé
-    applicants = details[2] if len(details) > 2 else "N/A"
-
-    # Extraire les types d'offre (CDI, CDD, Stage, etc.)
-    offer_types = []
-    offer_elements = soup_page.find_all("span", class_="ui-label text-body-small")
-    for offer in offer_elements:
-        offer_types.append(offer.text.strip())
-
-    job_data = [
-        title,
-        company_name,
-        posted_date.strftime("%Y-%m-%d %H:%M:%S"),  # Formatage de la date
-        applicants,
-        ", ".join(offer_types),
-        job_url,
-    ]
+    job_offer = await AIService(
+        deepseek_api_key=os.getenv("DEEPSEEK_API_KEY")
+    ).extract_job_offers(page_html)
 
     time.sleep(10)
-    return job_data
+    return job_offer
 
 
 def search_jobs(driver: webdriver.Chrome, keyword: str):
