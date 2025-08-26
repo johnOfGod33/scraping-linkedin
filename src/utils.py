@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
+from fake_useragent import UserAgent
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
@@ -21,7 +22,7 @@ load_dotenv()
 
 
 def load_cookies(driver: webdriver.Chrome):
-    """Charge les cookies à partir d'un fichier JSON et les applique au navigateur."""
+    """load cookies from a JSON file and add them to the Selenium WebDriver."""
     try:
         with open("cookies.json", "r") as cookies_file:
             cookies = json.load(cookies_file)
@@ -66,14 +67,12 @@ def save_to_csv(data: list, filename: str):
         writer.writerow(data)
 
 
-async def get_job_details(driver, job_url) -> JobOffers:
-    """Récupère les détails d'une offre d'emploi à partir de son URL."""
+async def get_job_details(driver: webdriver.Chrome, job_url: str) -> JobOffers:
+    """Get the job details from a job URL using Selenium and AIService to extract job offers."""
 
     driver.get(job_url)
-    page_html = driver.page_source
-    job_offer = await AIService(
-        deepseek_api_key=os.getenv("DEEPSEEK_API_KEY")
-    ).extract_job_offers(page_html)
+    page_text = driver.find_element("tag name", "body").text
+    job_offer = await AIService().extract_job_offers(page_text)
 
     time.sleep(10)
     return job_offer
@@ -142,6 +141,9 @@ def driver_setup() -> webdriver.Chrome:
 
 
 def get_default_chrome_option() -> Options:
+    ua = UserAgent()
+    user_agent = ua.random
+    print(f"Using User-Agent: {user_agent}")
     options = webdriver.ChromeOptions()
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
@@ -155,5 +157,6 @@ def get_default_chrome_option() -> Options:
     options.add_argument("--disable-blink-features=AutomationControlled")
     options.add_experimental_option("excludeSwitches", ["enable-automation"])
     options.add_experimental_option("useAutomationExtension", False)
+    options.add_argument(f"--user-agent={user_agent}")
 
     return options

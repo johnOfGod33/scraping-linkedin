@@ -4,6 +4,8 @@ from dotenv import load_dotenv
 from pydantic_ai import Agent
 from pydantic_ai.models.openai import OpenAIModel
 from pydantic_ai.providers.deepseek import DeepSeekProvider
+from pydantic_ai.providers.ollama import OllamaProvider
+from pydantic_ai.providers.openai import OpenAIProvider
 
 from models.job_offers import JobOffers
 
@@ -12,12 +14,41 @@ load_dotenv()
 
 class AIService:
     def __init__(self, deepseek_api_key: str = None, openai_api_key: str = None):
-        self.deepseek_model = OpenAIModel(
-            "deepseek-chat",
-            provider=DeepSeekProvider(
-                api_key=deepseek_api_key or os.getenv("DEEPSEEK_API_KEY")
-            ),
+        self.model = self._get_model(deepseek_api_key, openai_api_key)
+
+    def _get_model(self, deepseek_api_key: str = None, openai_api_key: str = None):
+        if openai_api_key:
+            return OpenAIModel(
+                "gpt-4o",
+                provider=OpenAIProvider(
+                    api_key=openai_api_key or os.getenv("OPENAI_API_KEY")
+                ),
+            )
+        elif deepseek_api_key:
+            return OpenAIModel(
+                "deepseek-chat",
+                provider=DeepSeekProvider(
+                    api_key=deepseek_api_key or os.getenv("DEEPSEEK_API_KEY")
+                ),
+            )
+        else:
+            # return ollama local model
+            print("Using local Ollama model")
+            return OpenAIModel(
+                model_name="llama3.2",
+                provider=OllamaProvider(base_url="http://localhost:11434/v1"),
+            )
+
+    async def test_model(self, prompt: str) -> str:
+        agent = Agent(
+            model=self.model,
+            system_prompt="You are a helpful assistant.",
+            output_type=str,
         )
+
+        response = await agent.run(prompt)
+
+        return response.output
 
     async def extract_job_offers(self, html: str) -> JobOffers:
         system_prompt = """
@@ -60,7 +91,7 @@ class AIService:
         """
 
         agent = Agent(
-            model=self.deepseek_model,
+            model=self.model,
             system_prompt=system_prompt,
             output_type=JobOffers,
         )

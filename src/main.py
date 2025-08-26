@@ -49,7 +49,7 @@ driver = driver_setup()
 # Authentification sur LinkedIn avec le driver et les identifiants
 authenticate(driver, user_credentials)
 
-# scrape_jobs(driver, keyword=keyword)
+scrape_jobs(driver, keyword=keyword)
 
 driver.quit()
 # Exécution du scraping des offres d'emploi en fonction du mot-clé fourni

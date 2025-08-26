@@ -4,7 +4,7 @@ from enum import Enum
 from pydantic import BaseModel, Field
 
 
-class WorkMoel(str, Enum):
+class WorkModel(str, Enum):
     FULL_TIME = "Full-time"
     PART_TIME = "Part-time"
     FREELANCE = "Freelance"
@@ -19,4 +19,4 @@ class JobOffers(BaseModel):
     )
     post_at: datetime = Field(description="The date the job was posted")
     applicants: int = Field(description="The number of applicants for the job")
-    work_model: WorkMoel = Field(description="The work model of the job")
+    work_model: WorkModel = Field(description="The work model of the job")
