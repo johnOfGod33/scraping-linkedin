@@ -1,15 +1,28 @@
 import csv
 import json
+import os
 import re
 import time
 from datetime import datetime, timedelta
 
 from bs4 import BeautifulSoup
+from dotenv import load_dotenv
+from fake_useragent import UserAgent
 from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.common.proxy import Proxy, ProxyType
+from webdriver_manager.chrome import ChromeDriverManager
+from webdriver_manager.core.os_manager import ChromeType
+
+from ai.ai_service import AIService
+from models.job_offers import JobOffers
+
+load_dotenv()
 
 
 def load_cookies(driver: webdriver.Chrome):
-    """Charge les cookies à partir d'un fichier JSON et les applique au navigateur."""
+    """load cookies from a JSON file and add them to the Selenium WebDriver."""
     try:
         with open("cookies.json", "r") as cookies_file:
             cookies = json.load(cookies_file)
@@ -18,6 +31,7 @@ def load_cookies(driver: webdriver.Chrome):
 
         return driver
     except FileNotFoundError:
+        print("No cookies found")
         return driver
 
 
@@ -53,57 +67,15 @@ def save_to_csv(data: list, filename: str):
         writer.writerow(data)
 
 
-def get_job_details(driver, job_url):
-    """Récupère les détails d'une offre d'emploi à partir de son URL."""
+async def get_job_details(driver: webdriver.Chrome, job_url: str) -> JobOffers:
+    """Get the job details from a job URL using Selenium and AIService to extract job offers."""
 
     driver.get(job_url)
-    page_html = driver.page_source
-    soup_page = BeautifulSoup(page_html, "html.parser")
-
-    # Extraire le titre du job
-    title = soup_page.find("h1", class_="t-24 t-bold inline").text.strip()
-
-    # Extraire le nom de l'entreprise
-    company_name = soup_page.find(
-        "div", class_="job-details-jobs-unified-top-card__company-name"
-    ).text.strip()
-
-    # Extraire les détails supplémentaires sur l'offre
-    job_details = soup_page.find("div", class_="t-black--light mt2").text.strip()
-    details = job_details.split(" · ")  # Séparer les détails par " · "
-
-    # Vérifier si la date est relative (ex: "3 days ago") ou un autre format (ex: "Reposted")
-    relative_date = details[1]
-    match = re.search(r"(\d+)", relative_date)  # Recherche d'un nombre dans la chaîne
-
-    if match:
-        days_ago = int(match.group(1))  # Extraire le nombre de jours
-        posted_date = datetime.now() - timedelta(
-            days=days_ago
-        )  # Calculer la date exacte
-    else:
-        posted_date = datetime.now()  # Si "Reposted", utiliser la date actuelle
-
-    # Extraire le nombre de candidats ayant postulé
-    applicants = details[2] if len(details) > 2 else "N/A"
-
-    # Extraire les types d'offre (CDI, CDD, Stage, etc.)
-    offer_types = []
-    offer_elements = soup_page.find_all("span", class_="ui-label text-body-small")
-    for offer in offer_elements:
-        offer_types.append(offer.text.strip())
-
-    job_data = [
-        title,
-        company_name,
-        posted_date.strftime("%Y-%m-%d %H:%M:%S"),  # Formatage de la date
-        applicants,
-        ", ".join(offer_types),
-        job_url,
-    ]
+    page_text = driver.find_element("tag name", "body").text
+    job_offer = await AIService().extract_job_offers(page_text)
 
     time.sleep(10)
-    return job_data
+    return job_offer
 
 
 def search_jobs(driver: webdriver.Chrome, keyword: str):
@@ -153,3 +125,38 @@ def search_jobs(driver: webdriver.Chrome, keyword: str):
             break  # Exit the loop if the page hasn't scrolled, meaning end of page
         old_position
  """
+
+
+def driver_setup() -> webdriver.Chrome:
+    options = get_default_chrome_option()
+    # options.timeouts = {"implicit": 5000, "pageLoad": 10000}
+
+    # Use ChromeDriverManager to automatically download the latest compatible version
+    service = Service(ChromeDriverManager().install())
+    # options.proxy = Proxy({"proxyType": ProxyType.DIRECT})
+
+    driver = webdriver.Chrome(options=options, service=service)
+    print("driver setup")
+    return driver
+
+
+def get_default_chrome_option() -> Options:
+    ua = UserAgent()
+    user_agent = ua.random
+    print(f"Using User-Agent: {user_agent}")
+    options = webdriver.ChromeOptions()
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--disable-gpu")
+    options.add_argument("--disable-extensions")
+    options.add_argument("--disable-plugins")
+    options.add_argument("--disable-images")
+    options.add_argument("--disable-javascript")
+    options.add_argument("--disable-web-security")
+    options.add_argument("--allow-running-insecure-content")
+    options.add_argument("--disable-blink-features=AutomationControlled")
+    options.add_experimental_option("excludeSwitches", ["enable-automation"])
+    options.add_experimental_option("useAutomationExtension", False)
+    options.add_argument(f"--user-agent={user_agent}")
+
+    return options
